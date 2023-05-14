@@ -253,7 +253,7 @@ We can easily fix this:
 ** Finishing touches
 Finally we need to configure the Guix application environment.
 
-This is described in the [[https://guix.gnu.org/manual/en/html_node/Application-Setup.html)][Guix documentation]], but here's my quick summary:
+This is described in the [[https://guix.gnu.org/manual/en/html_node/Application-Setup.html][Guix documentation]], but here's my quick summary:
 
 First update our local guix profile, run this as your user:
 #+BEGIN_SRC sh
