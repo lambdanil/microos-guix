@@ -1,3 +1,8 @@
+#+TITLE: Installing Guix on openSUSE MicroOS
+#+SETUPFILE: https://fniessen.github.io/org-html-themes/org/theme-readtheorg.setup
+
+[[https://raw.githack.com/CuBeRJAN/microos-guix/main/README.html][Click here for the HTML version]]
+
 * Introduction
 I have recently decided to move my desktop to an immutable system, more specifically openSUSE's MicroOS.
 
