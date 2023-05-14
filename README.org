@@ -1,0 +1,287 @@
+* Introduction
+I have recently decided to move my desktop to an immutable system, more specifically openSUSE's MicroOS.
+
+Since MicroOS doesn't use a traditional package manager like ~apt~ or ~zypper~, it's necessary to use containerised or otherwise distribution-independent solutions for installing packages.
+The usual approach is using ~flatpak~ for GUI applications, and ~distrobox~ to create containers for CLI utilities and wherever else it is needed.
+
+I personally have multiple issues with using containers:
+- They aren't transactionally updated - my containerized system can still break and cause trouble, even if limited just to the container this is still troublesome in my opinion.
+- The tooling is somewhat lacking in my opinion - for example exporting binaries from a container is a little awkward.
+
+The solution? [[https://guix.gnu.org/][Guix]].
+
+Guix allows for easy installations of software on MicroOS - there is little difference in usage compared to, say, ~apt~.
+
+However, using Guix on MicroOS has proven itself a difficult task - so I've decided to outline the steps for anyone looking to do the same.
+
+* Notes
+- Unfortunately it is currently not possible to use Guix with SELinux - for that reason SELinux will be set to ~permissive~ mode. This has certain security implications - I'm not a security expert so you are free to do your own research for what these are.
+  - I'll say that from what I've seen the general consensus seems that using ~permissive~ is /acceptable/ on a desktop.
+- I know Nix can be used for the same purpose, but I personally prefer Guix and have more experience with it.
+
+* Installation
+Let's get into the actual installation steps.
+
+** Prepare subvolume
+We will first need to create a ~btrfs~ subvolume for the ~/gnu~ directory. First let's fine the system drive's name - this can be done using the command ~lsblk~.
+
+Here is an example of what the output of this command can look like:
+#+BEGIN_SRC sh
+nvme0n1     259:0    0 476,9G  0 disk 
+├─nvme0n1p1 259:1    0   512M  0 part /boot/efi
+└─nvme0n1p2 259:2    0 476,4G  0 part /gnu/store
+                                      /usr/local
+                                      /srv
+                                      /opt
+                                      /home
+                                      /gnu
+                                      /boot/writable
+                                      /boot/grub2/x86_64-efi
+                                      /boot/grub2/i386-pc
+                                      /.snapshots
+                                      /var
+                                      /root
+                                      /
+
+#+END_SRC
+In this instance, the system partition is labeled as ~nvme0n1p2~, but yours might be different, so write it down as you'll soon need it!
+
+We'll now need to create the actual subvolume now:
+#+BEGIN_SRC sh
+  sudo -i # We'll log in as root for the rest of the process
+  mkdir /var/mnt
+  mount /dev/nvme0n1p2 /var/mnt -o subvolid=0 # use your parition name instead
+  btrfs subvolume create /var/mnt/@/gnu
+  umount /var/mnt
+#+END_SRC
+
+Next up we need to create the mountpoint for the subvolume.
+#+BEGIN_SRC sh
+  transactional-update shell # enter the shell
+  mkdir /gnu 
+  exit # exit the shell, we are now back to our host root user
+  exit # and we log out of the root account
+#+END_SRC
+
+Now reboot your computer. *This part is important - not rebooting now will cause issues later.*
+
+*The ~/gnu~ directory should exist now.* (If it doesn't it becomes impossible to proceed further, so make sure it's there!)
+
+** Mount subvolume
+Now that we have created the subvolume successfully we need to automatically mount it.
+
+Open up the file ~/etc/fstab~ in your editor of choice - ~nano~ will suffice.
+
+#+BEGIN_SRC sh
+  sudo -i
+  nano /etc/fstab
+#+END_SRC
+
+Now you'll see something like this:
+
+#+BEGIN_SRC conf-space
+  UUID=5805f3d4-7a45-435b-bcb4-234ce42633fe / btrfs ro 0 0
+  UUID=5805f3d4-7a45-435b-bcb4-234ce42633fe /var btrfs subvol=/@/var,x-initrd.mount 0 0
+  UUID=5805f3d4-7a45-435b-bcb4-234ce42633fe /usr/local btrfs subvol=/@/usr/local 0 0
+  UUID=5805f3d4-7a45-435b-bcb4-234ce42633fe /srv btrfs subvol=/@/srv 0 0
+  UUID=5805f3d4-7a45-435b-bcb4-234ce42633fe /root btrfs subvol=/@/root,x-initrd.mount 0 0
+  UUID=5805f3d4-7a45-435b-bcb4-234ce42633fe /opt btrfs subvol=/@/opt 0 0
+  UUID=5805f3d4-7a45-435b-bcb4-234ce42633fe /home btrfs subvol=/@/home 0 0
+  UUID=5805f3d4-7a45-435b-bcb4-234ce42633fe /boot/writable btrfs subvol=/@/boot/writable 0 0
+  UUID=5805f3d4-7a45-435b-bcb4-234ce42633fe /boot/grub2/x86_64-efi btrfs subvol=/@/boot/grub2/x86_64-efi 0 0
+  UUID=5805f3d4-7a45-435b-bcb4-234ce42633fe /boot/grub2/i386-pc btrfs subvol=/@/boot/grub2/i386-pc 0 0
+  UUID=5805f3d4-7a45-435b-bcb4-234ce42633fe /.snapshots btrfs subvol=/@/.snapshots 0 0
+  UUID=9832-F680 /boot/efi vfat utf8 0 2
+  overlay /etc overlay defaults,lowerdir=/sysroot/var/lib/overlay/3/etc:/sysroot/etc,upperdir=/sysroot/var/lib/overlay/4/etc,workdir=/sysroot/var/lib/overlay/4/work-etc,x-systemd.requires-mounts-for=/var,x-systemd.requires-mounts-for=/sysroot/var,x-initrd.mount 0 0
+#+END_SRC
+
+Take note of the ~UUID~ used for the ~/~ system (that's the one at the top of the file). We'll now add another line to the bottom of this file.
+
+#+BEGIN_SRC conf-space
+  UUID=5805f3d4-7a45-435b-bcb4-234ce42633fe /gnu btrfs subvol=/@/gnu 0 0 # if you copy-paste make sure to replace the UUID here!
+#+END_SRC
+
+Save the file, exit and yet again *reboot* (the reboot here isn't optional!).
+
+Finally once we reboot we can verify everything is mounted correctly:
+#+BEGIN_SRC sh
+  mount | grep gnu
+#+END_SRC
+
+And the output should be something similar to this:
+
+#+BEGIN_SRC sh
+  /dev/nvme0n1p2 on /gnu type btrfs (rw,relatime,seclabel,ssd,discard=async,space_cache=v2,subvolid=269,subvol=/@/gnu)
+#+END_SRC
+
+If everything is correct, we can move on to the next step.
+
+** Putting the Guix files into place
+We can now actually install Guix into the system. The steps we are about to take are mostly copied from [[https://guix.gnu.org/manual/en/html_node/Binary-Installation.html][here]] but there are some minor changes.
+
+*An important note here is that the URLs might change with new Guix releases, so check you are grabbing the latest version!*
+
+*** Downloading the tarball
+First we download the Guix tarball. 
+#+BEGIN_SRC sh
+  sudo -i # log in as root
+  cd /tmp
+  wget "https://ftp.gnu.org/gnu/guix/guix-binary-1.4.0.x86_64-linux.tar.xz" # download the Guix binary
+#+END_SRC
+
+Now we verify its signature
+#+BEGIN_SRC sh
+  wget "https://ftp.gnu.org/gnu/guix/guix-binary-1.4.0.x86_64-linux.tar.xz.sig" # download the signature
+  wget 'https://sv.gnu.org/people/viewgpg.php?user_id=15145' -qO - | gpg --import - # import signature
+  gpg --verify guix-binary-1.4.0.x86_64-linux.tar.xz.sig # and finally verify the file
+#+END_SRC
+
+If the command shows no issues, we have succesfully downloaded Guix.
+*Take note that a warning like “This key is not certified with a trusted signature!” is normal.*
+
+*** Extract and install the files
+We can continue the installation process - make sure you are still logged in as root!
+#+BEGIN_SRC sh
+  tar --warning=no-timestamp -xf /tmp/guix-binary-1.4.0.x86_64-linux.tar.xz
+  mv var/guix /var/
+  mv gnu/store /gnu/
+#+END_SRC
+
+I also like to disable copy-on-write for the ~/gnu~ directory as it isn't necessary there, this should also help improve speed.
+#+BEGIN_SRC sh
+  chattr +C -R /gnu
+#+END_SRC
+
+*** Set up the environment
+#+BEGIN_SRC sh
+  mkdir -p ~root/.config/guix
+  ln -sf /var/guix/profiles/per-user/root/current-guix ~root/.config/guix/current
+
+  export GUIX_PROFILE="`echo ~root`/.config/guix/current" 
+  source $GUIX_PROFILE/etc/profile
+#+END_SRC
+
+*** Add the build users and groups
+#+BEGIN_SRC sh
+  groupadd --system guixbuild # create the group
+#+END_SRC
+
+*This command spans multiple lines, make sure to copy it in its entirety!*
+#+BEGIN_SRC sh
+  for i in $(seq -w 1 10); # and now create the users
+  do
+    useradd -g guixbuild -G guixbuild           \
+	    -d /var/empty -s $(which nologin)     \
+	    -c "Guix build user $i" --system    \
+	    guixbuilder$i;
+  done
+#+END_SRC
+
+*** Install and enable the services
+First we copy the services in the necessary location, then we enable them.
+#+BEGIN_SRC sh
+  cp ~root/.config/guix/current/lib/systemd/system/gnu-store.mount ~root/.config/guix/current/lib/systemd/system/guix-daemon.service /etc/systemd/system/
+  systemctl enable gnu-store.mount guix-daemon
+#+END_SRC
+
+*** Systemwide binary installation
+At this point we can make the binary available for all users of the system.
+#+BEGIN_SRC sh
+  mkdir -p /usr/local/bin
+  cd /usr/local/bin
+  ln -s /var/guix/profiles/per-user/root/current-guix/bin/guix
+#+END_SRC
+
+It is also a good idea to make the Info version of this manual available there:
+#+BEGIN_SRC sh
+  mkdir -p /usr/local/share/info
+  cd /usr/local/share/info
+  for i in /var/guix/profiles/per-user/root/current-guix/share/info/* ; do ln -s $i ; done
+#+END_SRC
+
+*** Enabling substitutes
+Binary substitutes allow us to avoid building packages locally, (see the [[https://guix.gnu.org/manual/en/html_node/Binary-Installation.html][official documentation]])
+
+#+BEGIN_SRC sh
+  guix archive --authorize < ~root/.config/guix/current/share/guix/ci.guix.gnu.org.pub
+  guix archive --authorize < ~root/.config/guix/current/share/guix/bordeaux.guix.gnu.org.pub
+#+END_SRC
+
+** Setting the SELinux policy
+We are almost there, but Guix isn't quite functional yet. To disable SELinux we need to edit a kernel boot parameter.
+
+Open the file ~/etc/default/grub~ with your favorite editor.
+
+#+BEGIN_SRC sh
+  sudo nano /etc/default/grub
+#+END_SRC
+
+You should be able to find a line that looks like this:
+#+BEGIN_SRC conf-space
+  GRUB_CMDLINE_LINUX_DEFAULT="splash=silent swapaccount=1 mitigations=auto quiet security=selinux selinux=1 enforcing=1"
+#+END_SRC
+Here change the ~enforcing~ variable to 0.
+#+BEGIN_SRC conf-space
+  GRUB_CMDLINE_LINUX_DEFAULT="splash=silent swapaccount=1 mitigations=auto quiet security=selinux selinux=1 enforcing=0"
+#+END_SRC
+Save the file and exit.
+
+Now we have to regenerate the grub configuration:
+
+#+BEGIN_SRC sh
+  sudo transactional-update grub.cfg
+#+END_SRC
+
+*Reboot after this step!*
+
+After the reboot verify the status of the Guix daemon.
+
+#+BEGIN_SRC sh
+  systemctl status guix-daemon
+#+END_SRC
+
+If everything is okay we have successfully set up Guix!
+
+** Network fix
+At this point I'll also mention that Guix requires the ~/etc/services~ file, which currently doesn't exist by default on MicroOS.
+
+We can easily fix this:
+#+BEGIN_SRC sh
+  sudo ln -s /usr/etc/services /etc/services
+#+END_SRC
+
+** Finishing touches
+Finally we need to configure the Guix application environment.
+
+This is described in the [[https://guix.gnu.org/manual/en/html_node/Application-Setup.html)][Guix documentation]], but here's my quick summary:
+
+First update our local guix profile, run this as your user:
+#+BEGIN_SRC sh
+  guix pull
+#+END_SRC
+This might take a little while.
+
+Next open up the ~~/.bash_profile~ file, this time as your regular user. Then fill it in like so:
+#+BEGIN_SRC sh
+  if [ -f ~/.bashrc ]; then . ~/.bashrc; fi
+
+  if [ ! -f /.dockerenv ] && [ ! -f /run/.containerenv ]; then
+      export GUIX_PROFILE="$HOME/.guix-profile"
+      export GUIX_LOCPATH="$HOME/.guix-profile/lib/locale"
+      export PATH="$HOME/.config/guix/current/bin:$HOME/.bin:$PATH"
+      export SSL_CERT_DIR="$HOME/.guix-profile/etc/ssl/certs"
+      export SSL_CERT_FILE="$HOME/.guix-profile/etc/ssl/certs/ca-certificates.crt"
+      export GIT_SSL_CAINFO="$SSL_CERT_FILE"
+      . "$GUIX_PROFILE/etc/profile"
+  fi  
+#+END_SRC
+
+Now log out and back in for these changes to take effect. Finally we can install the most essential Guix packages:
+#+BEGIN_SRC sh
+  guix install glibc-locales nss-certs
+#+END_SRC
+
+* Conclusion
+With these steps you should be able to successfully set up Guix on MicroOS. If you find any broken steps or other problems, please post on the [[https://github.com/CuBeRJAN/microos-guix/issues][issues page]].
+
+
