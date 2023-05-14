@@ -192,7 +192,7 @@ At this point we can make the binary available for all users of the system.
   ln -s /var/guix/profiles/per-user/root/current-guix/bin/guix
 #+END_SRC
 
-It is also a good idea to make the Info version of this manual available there:
+It is also a good idea to make the manual available:
 #+BEGIN_SRC sh
   mkdir -p /usr/local/share/info
   cd /usr/local/share/info
@@ -200,7 +200,7 @@ It is also a good idea to make the Info version of this manual available there:
 #+END_SRC
 
 *** Enabling substitutes
-Binary substitutes allow us to avoid building packages locally, (see the [[https://guix.gnu.org/manual/en/html_node/Binary-Installation.html][official documentation]])
+Binary substitutes allow us to avoid building packages locally, (see the [[https://guix.gnu.org/manual/en/html_node/Substitutes.html][official documentation]])
 
 #+BEGIN_SRC sh
   guix archive --authorize < ~root/.config/guix/current/share/guix/ci.guix.gnu.org.pub
