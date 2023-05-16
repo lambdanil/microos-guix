@@ -22,13 +22,14 @@ However, installing Guix on MicroOS has proven itself a difficult task - so I've
 * Notes
 - Unfortunately it is currently not possible to use Guix with SELinux - for that reason SELinux will be set to ~permissive~ mode. This has certain security implications - I'm not a security expert so you are free to do your own research for what these are.
   - I'll say that from what I've seen the general consensus seems that using ~permissive~ is /acceptable/ on a desktop.
+- Graphical programs installed with Guix won't appear in the system menus until a re-login.
 - I know Nix can be used for the same purpose, but I personally prefer Guix and have more experience with it.
 
 * Installation
 Let's get into the actual installation steps.
 
 ** Prepare subvolume
-We will first need to create a ~btrfs~ subvolume for the ~/gnu~ directory. First let's find the system drive's name - this can be done using the command ~lsblk~.
+We will need to create a ~btrfs~ subvolume for the ~/gnu~ directory. First let's find the system drive's name - this can be done using the command ~lsblk~.
 
 Here is an example of what the output of this command can look like:
 #+BEGIN_SRC sh
@@ -156,6 +157,8 @@ I also like to disable copy-on-write for the ~/gnu~ directory as it isn't necess
 #+BEGIN_SRC sh
   chattr +C -R /gnu
 #+END_SRC
+
+*Note: The command is going to return multiple warnings. This is completely normal and nothing to worry about.*
 
 *** Set up the environment
 #+BEGIN_SRC sh
