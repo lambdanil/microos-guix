@@ -17,7 +17,7 @@ The solution? [[https://guix.gnu.org/][Guix]].
 
 Guix allows for easy installations of software on MicroOS - there is little difference in usage compared to, say, ~apt~.
 
-However, using Guix on MicroOS has proven itself a difficult task - so I've decided to outline the steps for anyone looking to do the same.
+However, installing Guix on MicroOS has proven itself a difficult task - so I've decided to outline the steps for anyone looking to do the same.
 
 * Notes
 - Unfortunately it is currently not possible to use Guix with SELinux - for that reason SELinux will be set to ~permissive~ mode. This has certain security implications - I'm not a security expert so you are free to do your own research for what these are.
@@ -188,6 +188,8 @@ First we copy the services in the necessary location, then we enable them.
   cp ~root/.config/guix/current/lib/systemd/system/gnu-store.mount ~root/.config/guix/current/lib/systemd/system/guix-daemon.service /etc/systemd/system/
   systemctl enable gnu-store.mount guix-daemon
 #+END_SRC
+
+*Note: if you try to immediately start the services at this point it's going to fail. This is completely normal and nothing to worry about.*
 
 *** Systemwide binary installation
 At this point we can make the binary available for all users of the system.
