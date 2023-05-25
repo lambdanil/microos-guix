@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2023-05-14 Ne 20:06 -->
+<!-- 2023-05-25 Čt 02:09 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Installing Guix on openSUSE MicroOS</title>
@@ -23,29 +23,29 @@
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents" role="doc-toc">
 <ul>
-<li><a href="#org05f1207">1. Introduction</a></li>
-<li><a href="#org8efa6dd">2. Notes</a></li>
-<li><a href="#org1569d2a">3. Installation</a>
+<li><a href="#org8aad1dd">1. Introduction</a></li>
+<li><a href="#org39c81d3">2. Notes</a></li>
+<li><a href="#org803e95e">3. Installation</a>
 <ul>
-<li><a href="#org17a2ee9">3.1. Prepare subvolume</a></li>
-<li><a href="#orgbeff66e">3.2. Mount subvolume</a></li>
-<li><a href="#orgcdb7ad2">3.3. Putting the Guix files into place</a>
+<li><a href="#org88b047d">3.1. Prepare subvolume</a></li>
+<li><a href="#orgce6fef0">3.2. Mount subvolume</a></li>
+<li><a href="#orgec83600">3.3. Putting the Guix files into place</a>
 <ul>
-<li><a href="#org252ede4">3.3.1. Downloading the tarball</a></li>
-<li><a href="#org0e7e6bd">3.3.2. Extract and install the files</a></li>
-<li><a href="#orgf5953dd">3.3.3. Set up the environment</a></li>
-<li><a href="#orgafeb01f">3.3.4. Add the build users and groups</a></li>
-<li><a href="#org3ec5798">3.3.5. Install and enable the services</a></li>
-<li><a href="#org3a39a7d">3.3.6. Systemwide binary installation</a></li>
-<li><a href="#orgb10ccaf">3.3.7. Enabling substitutes</a></li>
+<li><a href="#org71ea3c3">3.3.1. Downloading the tarball</a></li>
+<li><a href="#org4d971eb">3.3.2. Extract and install the files</a></li>
+<li><a href="#orgfed68a0">3.3.3. Set up the environment</a></li>
+<li><a href="#orgf1530a0">3.3.4. Add the build users and groups</a></li>
+<li><a href="#orgfd319c3">3.3.5. Install and enable the services</a></li>
+<li><a href="#orge4004b8">3.3.6. Systemwide binary installation</a></li>
+<li><a href="#orgaf78052">3.3.7. Enabling substitutes</a></li>
 </ul>
 </li>
-<li><a href="#org88f3f79">3.4. Setting the SELinux policy</a></li>
-<li><a href="#org090f728">3.5. Network fix</a></li>
-<li><a href="#org6db4ba1">3.6. Finishing touches</a></li>
+<li><a href="#org69acdb8">3.4. Setting the SELinux policy</a></li>
+<li><a href="#orgcbe1100">3.5. Network fix</a></li>
+<li><a href="#org8f77972">3.6. Finishing touches</a></li>
 </ul>
 </li>
-<li><a href="#org579dbbe">4. Conclusion</a></li>
+<li><a href="#orgd4df007">4. Conclusion</a></li>
 </ul>
 </div>
 </div>
@@ -53,8 +53,8 @@
 <a href="https://raw.githack.com/CuBeRJAN/microos-guix/main/README.html">Click here for the HTML version</a>
 </p>
 
-<div id="outline-container-org05f1207" class="outline-2">
-<h2 id="org05f1207"><span class="section-number-2">1.</span> Introduction</h2>
+<div id="outline-container-org8aad1dd" class="outline-2">
+<h2 id="org8aad1dd"><span class="section-number-2">1.</span> Introduction</h2>
 <div class="outline-text-2" id="text-1">
 <p>
 I have recently decided to move my desktop to an immutable system, more specifically openSUSE's MicroOS.
@@ -82,37 +82,38 @@ Guix allows for easy installations of software on MicroOS - there is little diff
 </p>
 
 <p>
-However, using Guix on MicroOS has proven itself a difficult task - so I've decided to outline the steps for anyone looking to do the same.
+However, installing Guix on MicroOS has proven itself a difficult task - so I've decided to outline the steps for anyone looking to do the same.
 </p>
 </div>
 </div>
 
-<div id="outline-container-org8efa6dd" class="outline-2">
-<h2 id="org8efa6dd"><span class="section-number-2">2.</span> Notes</h2>
+<div id="outline-container-org39c81d3" class="outline-2">
+<h2 id="org39c81d3"><span class="section-number-2">2.</span> Notes</h2>
 <div class="outline-text-2" id="text-2">
 <ul class="org-ul">
 <li>Unfortunately it is currently not possible to use Guix with SELinux - for that reason SELinux will be set to <code>permissive</code> mode. This has certain security implications - I'm not a security expert so you are free to do your own research for what these are.
 <ul class="org-ul">
 <li>I'll say that from what I've seen the general consensus seems that using <code>permissive</code> is <i>acceptable</i> on a desktop.</li>
 </ul></li>
+<li>Graphical programs installed with Guix won't appear in the system menus until a re-login.</li>
 <li>I know Nix can be used for the same purpose, but I personally prefer Guix and have more experience with it.</li>
 </ul>
 </div>
 </div>
 
-<div id="outline-container-org1569d2a" class="outline-2">
-<h2 id="org1569d2a"><span class="section-number-2">3.</span> Installation</h2>
+<div id="outline-container-org803e95e" class="outline-2">
+<h2 id="org803e95e"><span class="section-number-2">3.</span> Installation</h2>
 <div class="outline-text-2" id="text-3">
 <p>
 Let's get into the actual installation steps.
 </p>
 </div>
 
-<div id="outline-container-org17a2ee9" class="outline-3">
-<h3 id="org17a2ee9"><span class="section-number-3">3.1.</span> Prepare subvolume</h3>
+<div id="outline-container-org88b047d" class="outline-3">
+<h3 id="org88b047d"><span class="section-number-3">3.1.</span> Prepare subvolume</h3>
 <div class="outline-text-3" id="text-3-1">
 <p>
-We will first need to create a <code>btrfs</code> subvolume for the <code>/gnu</code> directory. First let's find the system drive's name - this can be done using the command <code>lsblk</code>.
+We will need to create a <code>btrfs</code> subvolume for the <code>/gnu</code> directory. First let's find the system drive's name - this can be done using the command <code>lsblk</code>.
 </p>
 
 <p>
@@ -174,8 +175,8 @@ Now reboot your computer. <b>This part is important - not rebooting now will cau
 </div>
 </div>
 
-<div id="outline-container-orgbeff66e" class="outline-3">
-<h3 id="orgbeff66e"><span class="section-number-3">3.2.</span> Mount subvolume</h3>
+<div id="outline-container-orgce6fef0" class="outline-3">
+<h3 id="orgce6fef0"><span class="section-number-3">3.2.</span> Mount subvolume</h3>
 <div class="outline-text-3" id="text-3-2">
 <p>
 Now that we have created the subvolume successfully we need to automatically mount it.
@@ -248,8 +249,8 @@ If everything is correct, we can move on to the next step.
 </div>
 </div>
 
-<div id="outline-container-orgcdb7ad2" class="outline-3">
-<h3 id="orgcdb7ad2"><span class="section-number-3">3.3.</span> Putting the Guix files into place</h3>
+<div id="outline-container-orgec83600" class="outline-3">
+<h3 id="orgec83600"><span class="section-number-3">3.3.</span> Putting the Guix files into place</h3>
 <div class="outline-text-3" id="text-3-3">
 <p>
 We can now actually install Guix into the system. The steps we are about to take are mostly copied from <a href="https://guix.gnu.org/manual/en/html_node/Binary-Installation.html">here</a> but there are some minor changes.
@@ -260,8 +261,8 @@ We can now actually install Guix into the system. The steps we are about to take
 </p>
 </div>
 
-<div id="outline-container-org252ede4" class="outline-4">
-<h4 id="org252ede4"><span class="section-number-4">3.3.1.</span> Downloading the tarball</h4>
+<div id="outline-container-org71ea3c3" class="outline-4">
+<h4 id="org71ea3c3"><span class="section-number-4">3.3.1.</span> Downloading the tarball</h4>
 <div class="outline-text-4" id="text-3-3-1">
 <p>
 First we download the Guix tarball. 
@@ -290,8 +291,8 @@ If the command shows no issues, we have succesfully downloaded Guix.
 </div>
 </div>
 
-<div id="outline-container-org0e7e6bd" class="outline-4">
-<h4 id="org0e7e6bd"><span class="section-number-4">3.3.2.</span> Extract and install the files</h4>
+<div id="outline-container-org4d971eb" class="outline-4">
+<h4 id="org4d971eb"><span class="section-number-4">3.3.2.</span> Extract and install the files</h4>
 <div class="outline-text-4" id="text-3-3-2">
 <p>
 We can continue the installation process - make sure you are still logged in as root!
@@ -310,11 +311,15 @@ I also like to disable copy-on-write for the <code>/gnu</code> directory as it i
 <pre class="src src-sh"><span style="color: #006DAF;">chattr</span> +C <span style="color: #D0372D;">-R</span> /gnu
 </pre>
 </div>
+
+<p>
+<b>Note: The command is going to return multiple warnings. This is completely normal and nothing to worry about.</b>
+</p>
 </div>
 </div>
 
-<div id="outline-container-orgf5953dd" class="outline-4">
-<h4 id="orgf5953dd"><span class="section-number-4">3.3.3.</span> Set up the environment</h4>
+<div id="outline-container-orgfed68a0" class="outline-4">
+<h4 id="orgfed68a0"><span class="section-number-4">3.3.3.</span> Set up the environment</h4>
 <div class="outline-text-4" id="text-3-3-3">
 <div class="org-src-container">
 <pre class="src src-sh"><span style="color: #006DAF;">mkdir</span> <span style="color: #D0372D;">-p</span> ~root/.config/guix
@@ -327,8 +332,8 @@ I also like to disable copy-on-write for the <code>/gnu</code> directory as it i
 </div>
 </div>
 
-<div id="outline-container-orgafeb01f" class="outline-4">
-<h4 id="orgafeb01f"><span class="section-number-4">3.3.4.</span> Add the build users and groups</h4>
+<div id="outline-container-orgf1530a0" class="outline-4">
+<h4 id="orgf1530a0"><span class="section-number-4">3.3.4.</span> Add the build users and groups</h4>
 <div class="outline-text-4" id="text-3-3-4">
 <div class="org-src-container">
 <pre class="src src-sh"><span style="color: #006DAF;">groupadd</span> <span style="color: #D0372D;">--system</span> guixbuild <span style="color: #8D8D84; font-style: italic;"># create the group</span>
@@ -351,8 +356,8 @@ I also like to disable copy-on-write for the <code>/gnu</code> directory as it i
 </div>
 </div>
 
-<div id="outline-container-org3ec5798" class="outline-4">
-<h4 id="org3ec5798"><span class="section-number-4">3.3.5.</span> Install and enable the services</h4>
+<div id="outline-container-orgfd319c3" class="outline-4">
+<h4 id="orgfd319c3"><span class="section-number-4">3.3.5.</span> Install and enable the services</h4>
 <div class="outline-text-4" id="text-3-3-5">
 <p>
 First we copy the services in the necessary location, then we enable them.
@@ -362,11 +367,15 @@ First we copy the services in the necessary location, then we enable them.
 <span style="color: #006DAF;">systemctl</span> enable gnu-store.mount guix-daemon
 </pre>
 </div>
+
+<p>
+<b>Note: if you try to immediately start the services at this point it's going to fail. This is completely normal and nothing to worry about.</b>
+</p>
 </div>
 </div>
 
-<div id="outline-container-org3a39a7d" class="outline-4">
-<h4 id="org3a39a7d"><span class="section-number-4">3.3.6.</span> Systemwide binary installation</h4>
+<div id="outline-container-orge4004b8" class="outline-4">
+<h4 id="orge4004b8"><span class="section-number-4">3.3.6.</span> Systemwide binary installation</h4>
 <div class="outline-text-4" id="text-3-3-6">
 <p>
 At this point we can make the binary available for all users of the system.
@@ -390,8 +399,8 @@ It is also a good idea to make the manual available:
 </div>
 </div>
 
-<div id="outline-container-orgb10ccaf" class="outline-4">
-<h4 id="orgb10ccaf"><span class="section-number-4">3.3.7.</span> Enabling substitutes</h4>
+<div id="outline-container-orgaf78052" class="outline-4">
+<h4 id="orgaf78052"><span class="section-number-4">3.3.7.</span> Enabling substitutes</h4>
 <div class="outline-text-4" id="text-3-3-7">
 <p>
 Binary substitutes allow us to avoid building packages locally, (see the <a href="https://guix.gnu.org/manual/en/html_node/Substitutes.html">official documentation</a>)
@@ -406,8 +415,8 @@ Binary substitutes allow us to avoid building packages locally, (see the <a href
 </div>
 </div>
 
-<div id="outline-container-org88f3f79" class="outline-3">
-<h3 id="org88f3f79"><span class="section-number-3">3.4.</span> Setting the SELinux policy</h3>
+<div id="outline-container-org69acdb8" class="outline-3">
+<h3 id="org69acdb8"><span class="section-number-3">3.4.</span> Setting the SELinux policy</h3>
 <div class="outline-text-3" id="text-3-4">
 <p>
 We are almost there, but Guix isn't quite functional yet. To disable SELinux we need to edit a kernel boot parameter.
@@ -468,8 +477,8 @@ If everything is okay we have successfully set up Guix!
 </div>
 </div>
 
-<div id="outline-container-org090f728" class="outline-3">
-<h3 id="org090f728"><span class="section-number-3">3.5.</span> Network fix</h3>
+<div id="outline-container-orgcbe1100" class="outline-3">
+<h3 id="orgcbe1100"><span class="section-number-3">3.5.</span> Network fix</h3>
 <div class="outline-text-3" id="text-3-5">
 <p>
 At this point I'll also mention that Guix requires the <code>/etc/services</code> file, which currently doesn't exist by default on MicroOS.
@@ -485,8 +494,8 @@ We can easily fix this:
 </div>
 </div>
 
-<div id="outline-container-org6db4ba1" class="outline-3">
-<h3 id="org6db4ba1"><span class="section-number-3">3.6.</span> Finishing touches</h3>
+<div id="outline-container-org8f77972" class="outline-3">
+<h3 id="org8f77972"><span class="section-number-3">3.6.</span> Finishing touches</h3>
 <div class="outline-text-3" id="text-3-6">
 <p>
 Finally we need to configure the Guix application environment.
@@ -520,6 +529,7 @@ Next open up the <code>$HOME/.bash_profile</code> file, this time as your regula
     <span style="color: #0000FF;">export</span> <span style="color: #BA36A5; font-style: italic;">SSL_CERT_DIR</span>=<span style="color: #008000;">"</span><span style="color: #0000FF;">$</span><span style="color: #D0372D; font-style: italic;">HOME</span><span style="color: #008000;">/.guix-profile/etc/ssl/certs"</span>
     <span style="color: #0000FF;">export</span> <span style="color: #BA36A5; font-style: italic;">SSL_CERT_FILE</span>=<span style="color: #008000;">"</span><span style="color: #0000FF;">$</span><span style="color: #D0372D; font-style: italic;">HOME</span><span style="color: #008000;">/.guix-profile/etc/ssl/certs/ca-certificates.crt"</span>
     <span style="color: #0000FF;">export</span> <span style="color: #BA36A5; font-style: italic;">GIT_SSL_CAINFO</span>=<span style="color: #008000;">"</span><span style="color: #0000FF;">$</span><span style="color: #D0372D; font-style: italic;">SSL_CERT_FILE</span><span style="color: #008000;">"</span>
+    <span style="color: #0000FF;">export</span> <span style="color: #BA36A5; font-style: italic;">XDG_DATA_DIRS</span>=<span style="color: #008000;">"</span><span style="color: #0000FF;">$</span><span style="color: #D0372D; font-style: italic;">XDG_DATA_DIRS</span><span style="color: #008000;">:</span><span style="color: #0000FF;">$</span><span style="color: #D0372D; font-style: italic;">HOME</span><span style="color: #008000;">/.guix-profile/share"</span>
     <span style="color: #006DAF;">.</span> <span style="color: #008000;">"</span><span style="color: #0000FF;">$</span><span style="color: #D0372D; font-style: italic;">GUIX_PROFILE</span><span style="color: #008000;">/etc/profile"</span>
 <span style="color: #0000FF;">fi</span>  
 </pre>
@@ -536,8 +546,8 @@ Now log out and back in for these changes to take effect. Finally we can install
 </div>
 </div>
 
-<div id="outline-container-org579dbbe" class="outline-2">
-<h2 id="org579dbbe"><span class="section-number-2">4.</span> Conclusion</h2>
+<div id="outline-container-orgd4df007" class="outline-2">
+<h2 id="orgd4df007"><span class="section-number-2">4.</span> Conclusion</h2>
 <div class="outline-text-2" id="text-4">
 <p>
 With these steps you should be able to successfully set up Guix on MicroOS. If you find any broken steps or other problems, please post on the <a href="https://github.com/CuBeRJAN/microos-guix/issues">issues page</a>.
@@ -547,7 +557,7 @@ With these steps you should be able to successfully set up Guix on MicroOS. If y
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: (λ () nil)</p>
-<p class="date">Created: 2023-05-14 Ne 20:06</p>
+<p class="date">Created: 2023-05-25 Čt 02:09</p>
 <p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
