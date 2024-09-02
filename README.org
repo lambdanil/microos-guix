@@ -255,8 +255,9 @@ If everything is okay we have successfully set up Guix!
 ** Network fix
 At this point I'll also mention that Guix requires the ~/etc/services~ file, which currently doesn't exist by default on MicroOS.
 
-We can easily fix this:
+We can easily fix this by installing the ~netcfg~ package and linking the file in its appropriate location:
 #+BEGIN_SRC sh
+  sudo transactional-update pkg in netcfg # you might need to reboot after this step
   sudo ln -s /usr/etc/services /etc/services
 #+END_SRC
 
